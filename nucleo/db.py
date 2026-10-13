@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS hallazgos (
 );
 CREATE INDEX IF NOT EXISTS ix_hall_encontrado ON hallazgos(encontrado);
 
+-- Qué autor seguido trajo (o volvió a encontrar) cada hallazgo
+CREATE TABLE IF NOT EXISTS hallazgo_autor (
+    hallazgo_id TEXT NOT NULL,
+    autor       TEXT NOT NULL,          -- nombre del autor en config.json
+    PRIMARY KEY (hallazgo_id, autor)
+);
+
 CREATE TABLE IF NOT EXISTS documentos (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
     ruta    TEXT UNIQUE NOT NULL,

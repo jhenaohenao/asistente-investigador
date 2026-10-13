@@ -3,14 +3,50 @@
   "dias_hacia_atras": 7,
   "max_por_fuente": 25,
   "palabras_clave": {
-    "en": ["transhumanism", "posthumanism", "human enhancement", "cognitive enhancement", "mind uploading", "radical life extension"],
-    "es": ["transhumanismo", "posthumanismo", "mejoramiento humano", "mejora cognitiva", "extensión radical de la vida"]
+    "en": [
+      "transhumanism",
+      "posthumanism",
+      "human enhancement",
+      "cognitive enhancement",
+      "mind uploading",
+      "radical life extension"
+    ],
+    "es": [
+      "transhumanismo",
+      "posthumanismo",
+      "mejoramiento humano",
+      "mejora cognitiva",
+      "extensión radical de la vida"
+    ]
   },
   "temas": {
-    "Identidad personal": ["identidad personal", "personal identity", "continuidad psicológica", "psychological continuity", "self"],
-    "Mejoramiento cognitivo": ["mejora cognitiva", "mejoramiento cognitivo", "cognitive enhancement", "nootrópicos", "nootropics"],
-    "Dignidad humana": ["dignidad humana", "human dignity", "naturaleza humana", "human nature"],
-    "Desigualdad y acceso": ["desigualdad", "inequality", "justicia distributiva", "distributive justice", "acceso"]
+    "Identidad personal": [
+      "identidad personal",
+      "personal identity",
+      "continuidad psicológica",
+      "psychological continuity",
+      "self"
+    ],
+    "Mejoramiento cognitivo": [
+      "mejora cognitiva",
+      "mejoramiento cognitivo",
+      "cognitive enhancement",
+      "nootrópicos",
+      "nootropics"
+    ],
+    "Dignidad humana": [
+      "dignidad humana",
+      "human dignity",
+      "naturaleza humana",
+      "human nature"
+    ],
+    "Desigualdad y acceso": [
+      "desigualdad",
+      "inequality",
+      "justicia distributiva",
+      "distributive justice",
+      "acceso"
+    ]
   },
   "fuentes": {
     "openalex": true,
@@ -21,13 +57,38 @@
     "rss": true
   },
   "rss": [
-    {"nombre": "Journal of Evolution and Technology", "url": "https://jetpress.org/feed/"},
-    {"nombre": "Philosophy & Technology (Springer)", "url": "https://link.springer.com/search.rss?facet-journal-id=13347&query="},
-    {"nombre": "AI & Society (Springer)", "url": "https://link.springer.com/search.rss?facet-journal-id=146&query="},
-    {"nombre": "MIT Technology Review", "url": "https://www.technologyreview.com/feed/"},
-    {"nombre": "arXiv cs.CY (Computers and Society)", "url": "https://rss.arxiv.org/rss/cs.CY"},
-    {"nombre": "PhilPapers - novedades", "url": "https://philpapers.org/recent.rss"}
+    {
+      "nombre": "Journal of Evolution and Technology",
+      "url": "https://jetpress.org/feed/"
+    },
+    {
+      "nombre": "Philosophy & Technology (Springer)",
+      "url": "https://link.springer.com/search.rss?facet-journal-id=13347&query="
+    },
+    {
+      "nombre": "AI & Society (Springer)",
+      "url": "https://link.springer.com/search.rss?facet-journal-id=146&query="
+    },
+    {
+      "nombre": "MIT Technology Review",
+      "url": "https://www.technologyreview.com/feed/"
+    },
+    {
+      "nombre": "arXiv cs.CY (Computers and Society)",
+      "url": "https://rss.arxiv.org/rss/cs.CY"
+    },
+    {
+      "nombre": "PhilPapers - novedades",
+      "url": "https://philpapers.org/recent.rss"
+    }
   ],
   "rss_filtrar_por_palabras": true,
-  "carpeta_pdfs": "biblioteca"
+  "carpeta_pdfs": "biblioteca",
+  "autores": [
+    {
+      "nombre": "Julián Henao Henao",
+      "orcid": "0009-0009-6610-3030",
+      "openalex_id": "A5093563315"
+    }
+  ]
 }

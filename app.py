@@ -9,7 +9,8 @@ import webbrowser
 import requests
 from flask import Flask, Response, abort, jsonify, render_template, request, send_file
 
-from nucleo import busqueda, pasajes
+from nucleo import autores, busqueda, pasajes
+from nucleo import fuentes as F
 from nucleo.db import RAIZ, conectar
 
 app = Flask(__name__)
@@ -44,16 +45,22 @@ def inicio():
 def api_hallazgos():
     estado = request.args.get("estado", "")
     texto = request.args.get("q", "").strip()
+    autor = request.args.get("autor", "")
     sql, args = "SELECT * FROM hallazgos WHERE 1=1", []
     if estado:
         sql += " AND estado=?"
         args.append(estado)
     else:
         sql += " AND estado!='descartado'"
-    if texto:
-        sql += " AND (titulo LIKE ? OR autores LIKE ? OR revista LIKE ?)"
-        args += [f"%{texto}%"] * 3
-    sql += " ORDER BY encontrado DESC, fecha_pub DESC LIMIT 500"
+    if autor:
+        sql += " AND id IN (SELECT hallazgo_id FROM hallazgo_autor WHERE autor=?)"
+        args.append(autor)
+    for t in (t.strip() for t in texto.split(",")):  # con comas: deben estar todos
+        if t:  # "autor: <nombre>" también encuentra lo que trajo ese autor seguido
+            sql += (" AND (titulo LIKE ? OR autores LIKE ? OR revista LIKE ? OR palabra_clave LIKE ?"
+                    " OR id IN (SELECT hallazgo_id FROM hallazgo_autor WHERE 'autor: ' || autor LIKE ?))")
+            args += [f"%{t}%"] * 5
+    sql += " ORDER BY encontrado DESC, fecha_pub DESC LIMIT " + ("5000" if autor else "500")
     con = conectar()
     filas = [dict(r) for r in con.execute(sql, args)]
     conteo = {r["estado"]: r["n"] for r in con.execute("SELECT estado, count(*) n FROM hallazgos GROUP BY estado")}
@@ -124,6 +131,59 @@ def exportar():
     w.writerows([tuple(f) for f in filas])
     return Response("﻿" + buf.getvalue(), mimetype="text/csv",
                     headers={"Content-Disposition": "attachment; filename=hallazgos.csv"})
+
+
+# ------------------------------------------------------------ Autores seguidos
+@app.get("/api/autores/candidatos")
+def api_autores_candidatos():
+    nombre = request.args.get("nombre", "").strip()
+    if not nombre:
+        return jsonify(candidatos=[])
+    try:
+        return jsonify(candidatos=F.openalex_candidatos(nombre, busqueda.cargar_config().get("correo_contacto", "")))
+    except Exception as e:
+        return jsonify(error=f"OpenAlex no respondió ({type(e).__name__})."), 502
+
+
+@app.post("/api/autores")
+def api_autores_agregar():
+    """Sigue a un autor: {orcid} (se valida y se busca su nombre) o un candidato {nombre, openalex_id, orcid}."""
+    d = request.json or {}
+    cfg = busqueda.cargar_config()
+    orcid = autores.normalizar_orcid(d.get("orcid")) or ""
+    if d.get("orcid") and not orcid and not d.get("openalex_id"):
+        return jsonify(error="ORCID no válido: revisa el formato 0000-0000-0000-0000 y el dígito final (puede ser X)."), 400
+    if d.get("openalex_id"):  # candidato de OpenAlex: un ORCID mal formado se descarta
+        autor = {"nombre": (d.get("nombre") or "").strip() or d["openalex_id"], "orcid": orcid,
+                 "openalex_id": d["openalex_id"].rsplit("/", 1)[-1]}
+    elif orcid:
+        autor = autores.por_orcid(orcid, cfg.get("correo_contacto", ""))
+    else:
+        return jsonify(error="Falta el ORCID o el autor de OpenAlex."), 400
+    autor, ya = autores.agregar(cfg, autor)
+    if not ya:
+        busqueda.guardar_config(cfg)
+    return jsonify(autor=autor, ya_existia=ya)
+
+
+@app.post("/api/autores/quitar")
+def api_autores_quitar():
+    nombre = (request.json or {}).get("nombre")
+    cfg = busqueda.cargar_config()
+    cfg["autores"] = [a for a in cfg.get("autores", []) if a["nombre"] != nombre]
+    busqueda.guardar_config(cfg)
+    return jsonify(ok=True)
+
+
+@app.post("/api/autores/obra_completa")
+def api_obra_completa():
+    nombre = (request.json or {}).get("nombre", "")
+
+    def tarea():
+        n, total, err = busqueda.obra_completa(nombre)
+        return (f"Obra completa de {nombre}: {total} obras ({n} nuevas)"
+                + (f" · no respondió: {', '.join(err)}" if err else ""))
+    return jsonify(iniciada=_en_segundo_plano(f"Trayendo la obra completa de {nombre}", tarea))
 
 
 # ------------------------------------------------------------ Pasajes

@@ -44,6 +44,8 @@ button.p{background:var(--acento);border-color:var(--acento);color:#fff}
 .acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .acciones button,.acciones a{font-size:12.5px;padding:4px 9px;border:1px solid var(--linea);border-radius:5px;background:none;color:var(--tinta);cursor:pointer;text-decoration:none}
 .acciones .sel{background:var(--tinta);color:var(--papel)}
+.autor{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--linea)}
+.autor .acciones{margin-top:0}
 .vacio{text-align:center;color:var(--tenue);padding:40px 10px;font-style:italic;font-family:var(--serif)}
 .paginas{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .pag{border:1px solid var(--linea);border-radius:6px;padding:5px 9px;font-size:13px;text-decoration:none;color:var(--tinta);background:var(--papel)}
@@ -74,7 +76,8 @@ th{color:var(--tenue);font-weight:500;font-size:12.5px}
 <!-- ============ NOVEDADES ============ -->
 <section id="novedades" class="activo">
   <div class="barra">
-    <input type="text" id="filtroTexto" placeholder="Filtrar por título, autor o revista">
+    <input type="text" id="filtroTexto" placeholder="Filtrar por título, autor, revista o “autor: nombre” (separa con comas para exigir todos)">
+    <select id="filtroAutor"><option value="">Todos los autores</option></select>
     <button class="b p" id="btnBuscar">Buscar ahora</button>
     <a class="b" href="/exportar.csv" style="text-decoration:none">Exportar CSV</a>
   </div>
@@ -113,10 +116,21 @@ th{color:var(--tenue);font-weight:500;font-size:12.5px}
 
 <!-- ============ AJUSTES ============ -->
 <section id="ajustes">
-  <label class="f">Palabras clave en inglés (una por línea)</label>
+  <label class="f">Palabras clave en inglés (una por línea; separa con comas para exigir todos los términos, p. ej. <code>transhumanism, education</code>)</label>
   <textarea id="kwEn"></textarea>
-  <label class="f">Palabras clave en español (una por línea)</label>
+  <label class="f">Palabras clave en español (una por línea; separa con comas para exigir todos los términos, p. ej. <code>transhumanismo, educación</code>)</label>
   <textarea id="kwEs"></textarea>
+  <label class="f">Autores seguidos — sus obras recientes llegan a Novedades con la etiqueta <code>autor: nombre</code></label>
+  <div id="listaAutores"></div>
+  <div class="barra" style="margin-top:8px">
+    <input type="text" id="autorNombre" placeholder="Buscar autor por nombre en OpenAlex">
+    <button class="b" id="btnCandidatos">Buscar</button>
+  </div>
+  <div id="candidatos"></div>
+  <div class="barra">
+    <input type="text" id="autorOrcid" placeholder="o añadir por ORCID: 0000-0002-1825-0097 o https://orcid.org/…">
+    <button class="b" id="btnOrcid">Añadir</button>
+  </div>
   <label class="f">Problemáticas para localizar pasajes — formato: <code>Nombre: término 1, término 2, ...</code> (una por línea)</label>
   <textarea id="temasTxt" style="min-height:120px"></textarea>
   <label class="f">Revistas seguidas por RSS — formato: <code>Nombre | URL del feed</code></label>
@@ -150,7 +164,8 @@ let estadoFiltro = "";
 const NOMBRES = {nuevo:"Nuevo", por_leer:"Por leer", leido:"Leído", descartado:"Descartado"};
 async function cargarHallazgos(){
   const q = encodeURIComponent($("#filtroTexto").value);
-  const d = await fetch(`/api/hallazgos?estado=${estadoFiltro}&q=${q}`).then(r=>r.json());
+  const autor = encodeURIComponent($("#filtroAutor").value);
+  const d = await fetch(`/api/hallazgos?estado=${estadoFiltro}&q=${q}&autor=${autor}`).then(r=>r.json());
   const c = d.conteo || {};
   document.querySelectorAll("#chipsEstado .chip").forEach(ch => {
     const n = ch.dataset.e ? (c[ch.dataset.e]||0) : Object.entries(c).filter(([k])=>k!=="descartado").reduce((a,[,v])=>a+v,0);
@@ -180,6 +195,7 @@ $("#listaHallazgos").onclick = async e => {
   if (e.target.dataset.desc){ e.target.textContent="Descargando…"; const r = await post(`/api/hallazgos/${card.dataset.id}/descargar`); toast(r.ok ? `Guardado e indexado: ${r.archivo}` : r.error); e.target.textContent="Guardar en biblioteca"; }
 };
 $("#chipsEstado").onclick = e => { if(!e.target.classList.contains("chip")) return; estadoFiltro = e.target.dataset.e ?? ""; document.querySelectorAll("#chipsEstado .chip").forEach(c=>c.classList.toggle("activo", c===e.target)); cargarHallazgos(); };
+$("#filtroAutor").onchange = cargarHallazgos;
 let tFiltro; $("#filtroTexto").oninput = () => { clearTimeout(tFiltro); tFiltro = setTimeout(cargarHallazgos, 250); };
 
 async function vigilarTarea(alTerminar){
@@ -232,7 +248,55 @@ async function cargarAjustes(){
   $("#correo").value = cfg.correo_contacto||""; $("#dias").value = cfg.dias_hacia_atras;
   $("#chipsFuentes").innerHTML = Object.entries(cfg.fuentes).map(([k,v])=>`<span class="chip ${v?"activo":""}" data-f="${k}">${k.replace("_"," ")}</span>`).join("");
   $("#tema").innerHTML = `<option value="">— o elige una problemática —</option>` + Object.keys(cfg.temas||{}).map(t=>`<option>${esc(t)}</option>`).join("");
+  pintarAutores();
 }
+function pintarAutores(){
+  const lista = cfg.autores||[];
+  $("#listaAutores").innerHTML = lista.length ? lista.map(a => `
+    <div class="autor" data-nombre="${esc(a.nombre)}">
+      <div><b>${esc(a.nombre)}</b> <span class="meta">${a.orcid?`· ORCID <a href="https://orcid.org/${esc(a.orcid)}" target="_blank" rel="noopener">${esc(a.orcid)}</a>`:"· sin ORCID"}${a.openalex_id?` · OpenAlex ${esc(a.openalex_id)}`:""}</span></div>
+      <div class="acciones"><button data-acc="ver">Ver en Novedades</button><button data-acc="obra">Obra completa</button><button data-acc="quitar">Dejar de seguir</button></div>
+    </div>`).join("") : `<p class="aviso">Aún no sigues a ningún autor.</p>`;
+  const sel = $("#filtroAutor"), actual = sel.value;
+  sel.innerHTML = `<option value="">Todos los autores</option>` + lista.map(a=>`<option>${esc(a.nombre)}</option>`).join("");
+  sel.value = lista.some(a=>a.nombre===actual) ? actual : "";
+}
+function verAutor(nombre){
+  $("#filtroAutor").value = nombre; $("#filtroTexto").value = "";
+  document.querySelector('nav button[data-t="novedades"]').click(); cargarHallazgos();
+}
+$("#listaAutores").onclick = async e => {
+  const fila = e.target.closest(".autor"), acc = e.target.dataset.acc; if (!fila || !acc) return;
+  const nombre = fila.dataset.nombre;
+  if (acc==="ver") verAutor(nombre);
+  if (acc==="obra"){ const r = await post("/api/autores/obra_completa",{nombre}); if(!r.iniciada) return toast("Ya hay una tarea en curso"); vigilarTarea(()=>verAutor(nombre)); }
+  if (acc==="quitar" && confirm(`¿Dejar de seguir a ${nombre}? Sus hallazgos se conservan.`)){ await post("/api/autores/quitar",{nombre}); cargarAjustes(); }
+};
+let candidatos = [];
+async function buscarCandidatos(){
+  const nombre = $("#autorNombre").value.trim(); if (!nombre) return;
+  $("#candidatos").innerHTML = `<p class="aviso">Buscando…</p>`;
+  const d = await fetch(`/api/autores/candidatos?nombre=${encodeURIComponent(nombre)}`).then(r=>r.json());
+  if (d.error) return $("#candidatos").innerHTML = `<p class="aviso">${esc(d.error)}</p>`;
+  candidatos = d.candidatos;
+  $("#candidatos").innerHTML = candidatos.length ? candidatos.map((c,i) => `
+    <div class="autor">
+      <div><b>${esc(c.nombre)}</b> <span class="meta">· ${esc(c.institucion||"institución desconocida")} · ${c.obras} obras · ${c.orcid?`ORCID ${esc(c.orcid)}`:"sin ORCID"}</span></div>
+      <div class="acciones"><button data-i="${i}">Seguir</button></div>
+    </div>`).join("") : `<p class="aviso">OpenAlex no encontró autores con ese nombre.</p>`;
+}
+$("#btnCandidatos").onclick = buscarCandidatos;
+$("#autorNombre").onkeydown = e => { if(e.key==="Enter") buscarCandidatos(); };
+async function seguir(datos){
+  const r = await post("/api/autores", datos);
+  if (r.error) return toast(r.error);
+  toast(r.ya_existia ? `Ya seguías a ${r.autor.nombre}` : `Ahora sigues a ${r.autor.nombre}`);
+  $("#candidatos").innerHTML = ""; $("#autorNombre").value = ""; $("#autorOrcid").value = "";
+  cargarAjustes();
+}
+$("#candidatos").onclick = e => { const i = e.target.dataset.i; if (i!==undefined) seguir(candidatos[i]); };
+$("#btnOrcid").onclick = () => { const o = $("#autorOrcid").value.trim(); if (o) seguir({orcid:o}); };
+$("#autorOrcid").onkeydown = e => { if(e.key==="Enter") $("#btnOrcid").click(); };
 $("#chipsFuentes").onclick = e => { if(e.target.dataset.f) e.target.classList.toggle("activo"); };
 $("#btnGuardar").onclick = async () => {
   const lineas = id => $(id).value.split("\n").map(s=>s.trim()).filter(Boolean);
