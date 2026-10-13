@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Investigador local</title>
+<style>
+:root{
+  --papel:#f6f3ec; --hoja:#fffdf8; --tinta:#1f1d1a; --tenue:#6b665d; --linea:#e2ddd1;
+  --acento:#7a2e1f; --acento-suave:#f1e3dc; --ok:#2f5d3a; --ok-suave:#e2eee3;
+  --serif: "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans: "Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root{
+  --papel:#191816; --hoja:#22201d; --tinta:#ece7dc; --tenue:#a49d90; --linea:#36332e;
+  --acento:#e0896f; --acento-suave:#3a2620; --ok:#8cc49a; --ok-suave:#203024;}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--papel);color:var(--tinta);font:15px/1.5 var(--sans)}
+header{padding:22px 32px 0;border-bottom:1px solid var(--linea);background:var(--hoja)}
+h1{font:600 24px var(--serif);margin:0 0 2px;letter-spacing:.2px}
+.lema{color:var(--tenue);font-size:13px;margin:0 0 14px}
+nav{display:flex;gap:4px}
+nav button{border:0;background:none;padding:10px 14px;font:inherit;color:var(--tenue);cursor:pointer;border-bottom:2px solid transparent}
+nav button.activo{color:var(--tinta);border-color:var(--acento);font-weight:600}
+main{max-width:1040px;margin:0 auto;padding:24px 32px 60px}
+section{display:none} section.activo{display:block}
+.barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+input[type=text],textarea,select{font:inherit;color:inherit;background:var(--hoja);border:1px solid var(--linea);border-radius:6px;padding:8px 10px}
+input[type=text]{min-width:240px;flex:1}
+button.b{font:inherit;border:1px solid var(--linea);background:var(--hoja);color:var(--tinta);border-radius:6px;padding:7px 12px;cursor:pointer}
+button.b:hover,a.b:hover{border-color:var(--tenue)}
+a.b{color:var(--tinta);display:inline-block}
+button.p{background:var(--acento);border-color:var(--acento);color:#fff}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--linea);border-radius:99px;padding:3px 11px;font-size:13px;cursor:pointer;background:var(--hoja)}
+.chip.activo{background:var(--tinta);color:var(--papel);border-color:var(--tinta)}
+.aviso{font-size:13px;color:var(--tenue);margin:4px 0 14px}
+.tarjeta{background:var(--hoja);border:1px solid var(--linea);border-radius:8px;padding:14px 16px;margin-bottom:10px}
+.tarjeta h3{font:600 16.5px/1.35 var(--serif);margin:0 0 4px}
+.tarjeta h3 a{color:inherit;text-decoration:none} .tarjeta h3 a:hover{color:var(--acento);text-decoration:underline}
+.meta{font-size:13px;color:var(--tenue)}
+.etq{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:4px;background:var(--acento-suave);color:var(--acento);margin-right:4px}
+.etq.oa{background:var(--ok-suave);color:var(--ok)}
+.acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.acciones button,.acciones a{font-size:12.5px;padding:4px 9px;border:1px solid var(--linea);border-radius:5px;background:none;color:var(--tinta);cursor:pointer;text-decoration:none}
+.acciones .sel{background:var(--tinta);color:var(--papel)}
+.vacio{text-align:center;color:var(--tenue);padding:40px 10px;font-style:italic;font-family:var(--serif)}
+.paginas{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pag{border:1px solid var(--linea);border-radius:6px;padding:5px 9px;font-size:13px;text-decoration:none;color:var(--tinta);background:var(--papel)}
+.pag:hover{border-color:var(--acento)}
+.pag b{font-weight:600} .pag small{color:var(--tenue)}
+.ubic{font:600 15px var(--serif);color:var(--acento)}
+label.f{display:block;font-size:13px;color:var(--tenue);margin:14px 0 4px}
+textarea{width:100%;min-height:90px;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px} td,th{padding:7px 6px;border-bottom:1px solid var(--linea);text-align:left}
+th{color:var(--tenue);font-weight:500;font-size:12.5px}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--tinta);color:var(--papel);padding:9px 16px;border-radius:7px;font-size:14px;display:none}
+@media (max-width:640px){header,main{padding-left:16px;padding-right:16px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Investigador local</h1>
+  <p class="lema">Encuentra fuentes y señala dónde leer. La lectura y el criterio son tuyos.</p>
+  <nav>
+    <button data-t="novedades" class="activo">Novedades</button>
+    <button data-t="pasajes">Localizar pasajes</button>
+    <button data-t="biblioteca">Biblioteca</button>
+    <button data-t="ajustes">Ajustes</button>
+  </nav>
+</header>
+<main>
+
+<!-- ============ NOVEDADES ============ -->
+<section id="novedades" class="activo">
+  <div class="barra">
+    <input type="text" id="filtroTexto" placeholder="Filtrar por título, autor o revista">
+    <button class="b p" id="btnBuscar">Buscar ahora</button>
+    <a class="b" href="/exportar.csv" style="text-decoration:none">Exportar CSV</a>
+  </div>
+  <div class="chips" id="chipsEstado">
+    <span class="chip activo" data-e="">Todo</span>
+    <span class="chip" data-e="nuevo">Nuevos</span>
+    <span class="chip" data-e="por_leer">Por leer</span>
+    <span class="chip" data-e="leido">Leídos</span>
+    <span class="chip" data-e="descartado">Descartados</span>
+  </div>
+  <p class="aviso" id="ultima"></p>
+  <div id="listaHallazgos"></div>
+</section>
+
+<!-- ============ PASAJES ============ -->
+<section id="pasajes">
+  <div class="barra">
+    <input type="text" id="terminos" placeholder='Términos separados por coma: identidad personal, mind uploading, cuerpo'>
+    <button class="b p" id="btnPasajes">Localizar</button>
+  </div>
+  <div class="barra">
+    <select id="tema"><option value="">— o elige una problemática —</option></select>
+    <select id="modo"><option value="cualquiera">Cualquiera de los términos</option><option value="todas">Todos en el mismo párrafo</option></select>
+    <label style="font-size:13px"><input type="checkbox" id="raiz" checked> Incluir variantes (mejora → mejoramiento)</label>
+  </div>
+  <p class="aviso">Solo se indica la ubicación (documento, página, párrafo) y qué término coincidió. Al hacer clic se abre el PDF en esa página.</p>
+  <div id="listaPasajes"></div>
+</section>
+
+<!-- ============ BIBLIOTECA ============ -->
+<section id="biblioteca">
+  <p class="aviso">Coloca tus PDF en la carpeta <code id="carpeta"></code> (puedes usar subcarpetas) y pulsa “Actualizar índice”. También puedes guardar aquí los PDF abiertos desde Novedades.</p>
+  <div class="barra"><button class="b p" id="btnIndexar">Actualizar índice</button></div>
+  <div id="tablaDocs"></div>
+</section>
+
+<!-- ============ AJUSTES ============ -->
+<section id="ajustes">
+  <label class="f">Palabras clave en inglés (una por línea)</label>
+  <textarea id="kwEn"></textarea>
+  <label class="f">Palabras clave en español (una por línea)</label>
+  <textarea id="kwEs"></textarea>
+  <label class="f">Problemáticas para localizar pasajes — formato: <code>Nombre: término 1, término 2, ...</code> (una por línea)</label>
+  <textarea id="temasTxt" style="min-height:120px"></textarea>
+  <label class="f">Revistas seguidas por RSS — formato: <code>Nombre | URL del feed</code></label>
+  <textarea id="rssTxt" style="min-height:120px"></textarea>
+  <label class="f"><input type="checkbox" id="rssFiltro"> Del RSS, traer solo lo que mencione mis palabras clave</label>
+  <label class="f">Fuentes activas</label>
+  <div class="chips" id="chipsFuentes"></div>
+  <label class="f">Correo de contacto (opcional; OpenAlex y Crossref responden más rápido si lo das)</label>
+  <input type="text" id="correo" style="max-width:360px">
+  <label class="f">Días hacia atrás en cada búsqueda</label>
+  <input type="text" id="dias" style="max-width:80px;min-width:0">
+  <div style="margin-top:18px"><button class="b p" id="btnGuardar">Guardar ajustes</button></div>
+</section>
+</main>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => (s ?? "").toString().replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const toast = m => { const t=$("#toast"); t.textContent=m; t.style.display="block"; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display="none",3500); };
+const post = (u, b) => fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})}).then(r=>r.json());
+
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button, section").forEach(x => x.classList.remove("activo"));
+  b.classList.add("activo"); $("#"+b.dataset.t).classList.add("activo");
+  if (b.dataset.t==="biblioteca") cargarDocs();
+});
+
+/* ---------- Novedades ---------- */
+let estadoFiltro = "";
+const NOMBRES = {nuevo:"Nuevo", por_leer:"Por leer", leido:"Leído", descartado:"Descartado"};
+async function cargarHallazgos(){
+  const q = encodeURIComponent($("#filtroTexto").value);
+  const d = await fetch(`/api/hallazgos?estado=${estadoFiltro}&q=${q}`).then(r=>r.json());
+  const c = d.conteo || {};
+  document.querySelectorAll("#chipsEstado .chip").forEach(ch => {
+    const n = ch.dataset.e ? (c[ch.dataset.e]||0) : Object.entries(c).filter(([k])=>k!=="descartado").reduce((a,[,v])=>a+v,0);
+    const ETQ = {"":"Todo", nuevo:"Nuevos", por_leer:"Por leer", leido:"Leídos", descartado:"Descartados"};
+    ch.textContent = `${ETQ[ch.dataset.e]} (${n})`;
+  });
+  $("#ultima").textContent = d.ultima ? `Última búsqueda: ${d.ultima.fecha} · ${d.ultima.nuevos} enlaces nuevos${d.ultima.detalle ? " · algunas fuentes no respondieron" : ""}` : "Aún no se ha hecho ninguna búsqueda. Pulsa “Buscar ahora”.";
+  $("#listaHallazgos").innerHTML = d.items.length ? d.items.map(h => `
+    <div class="tarjeta" data-id="${h.id}">
+      <h3><a href="${esc(h.url)}" target="_blank" rel="noopener">${esc(h.titulo)}</a></h3>
+      <div class="meta">${esc(h.autores)}${h.autores?" · ":""}<i>${esc(h.revista)}</i>${h.fecha_pub?" · "+esc(h.fecha_pub):""}</div>
+      <div class="meta" style="margin-top:6px">
+        <span class="etq">${esc(h.palabra_clave)}</span>
+        <span class="etq" style="background:none;border:1px solid var(--linea);color:var(--tenue)">${esc(h.fuente)}</span>
+        ${h.acceso_abierto||h.url_pdf ? '<span class="etq oa">Acceso abierto</span>' : ''}
+        ${h.doi ? `<span>DOI ${esc(h.doi)}</span>` : ''}
+      </div>
+      <div class="acciones">
+        ${["por_leer","leido","descartado"].map(e=>`<button data-est="${e}" class="${h.estado===e?"sel":""}">${NOMBRES[e]}</button>`).join("")}
+        ${h.url_pdf ? `<a href="${esc(h.url_pdf)}" target="_blank" rel="noopener">Abrir PDF</a><button data-desc="1">Guardar en biblioteca</button>` : ""}
+      </div>
+    </div>`).join("") : `<div class="vacio">Nada por aquí todavía.</div>`;
+}
+$("#listaHallazgos").onclick = async e => {
+  const card = e.target.closest(".tarjeta"); if (!card) return;
+  if (e.target.dataset.est){ await post(`/api/hallazgos/${card.dataset.id}/estado`,{estado:e.target.dataset.est}); cargarHallazgos(); }
+  if (e.target.dataset.desc){ e.target.textContent="Descargando…"; const r = await post(`/api/hallazgos/${card.dataset.id}/descargar`); toast(r.ok ? `Guardado e indexado: ${r.archivo}` : r.error); e.target.textContent="Guardar en biblioteca"; }
+};
+$("#chipsEstado").onclick = e => { if(!e.target.classList.contains("chip")) return; estadoFiltro = e.target.dataset.e ?? ""; document.querySelectorAll("#chipsEstado .chip").forEach(c=>c.classList.toggle("activo", c===e.target)); cargarHallazgos(); };
+let tFiltro; $("#filtroTexto").oninput = () => { clearTimeout(tFiltro); tFiltro = setTimeout(cargarHallazgos, 250); };
+
+async function vigilarTarea(alTerminar){
+  const t = await fetch("/api/tarea").then(r=>r.json());
+  toast(t.mensaje);
+  if (t.corriendo) setTimeout(()=>vigilarTarea(alTerminar), 2000); else alTerminar && alTerminar();
+}
+$("#btnBuscar").onclick = async () => { const r = await post("/api/buscar_ahora"); if(!r.iniciada) toast("Ya hay una tarea en curso"); vigilarTarea(cargarHallazgos); };
+
+/* ---------- Pasajes ---------- */
+$("#btnPasajes").onclick = localizar;
+$("#terminos").onkeydown = e => { if(e.key==="Enter") localizar(); };
+$("#tema").onchange = localizar;
+async function localizar(){
+  const terminos = $("#terminos").value.split(",").map(s=>s.trim()).filter(Boolean);
+  const tema = $("#tema").value;
+  if (!terminos.length && !tema) return;
+  const d = await post("/api/pasajes",{terminos, tema, modo:$("#modo").value, raiz:$("#raiz").checked});
+  const total = d.resultados.reduce((a,r)=>a+r.paginas.length,0);
+  $("#listaPasajes").innerHTML = d.resultados.length ? `<p class="aviso">${d.resultados.length} documento(s), ${total} página(s) para revisar.</p>` + d.resultados.map(r => `
+    <div class="tarjeta">
+      <h3>${esc(r.nombre)}</h3>
+      <div><span class="ubic">Puedes leer ${esc(r.rangos)}</span> <span class="meta">de ${r.paginas_total}</span></div>
+      <div class="meta" style="margin-top:4px">Términos encontrados: ${r.terminos.map(t=>`<span class="etq">${esc(t)}</span>`).join("")}</div>
+      <div class="paginas">${r.paginas.map(p => `
+        <a class="pag" href="/pdf/${r.doc_id}#page=${p.pagina}" target="_blank" title="${esc(p.terminos.join(", "))}">
+          <b>pág. ${p.pagina}</b> <small>párr. ${p.parrafos.join(", ")}</small></a>`).join("")}
+      </div>
+    </div>`).join("") : `<div class="vacio">No aparece en los documentos indexados. Prueba variantes o el otro idioma.</div>`;
+}
+
+/* ---------- Biblioteca ---------- */
+async function cargarDocs(){
+  const d = await fetch("/api/documentos").then(r=>r.json());
+  $("#carpeta").textContent = d.carpeta;
+  $("#tablaDocs").innerHTML = d.documentos.length ? `<table><tr><th>Documento</th><th>Páginas</th><th>Párrafos</th><th>Indexado</th></tr>${
+    d.documentos.map(x=>`<tr><td><a href="/pdf/${x.id}" target="_blank">${esc(x.nombre)}</a></td><td>${x.paginas}</td><td>${x.parrafos || '<span class="etq">sin texto: requiere OCR</span>'}</td><td class="meta">${esc(x.indexado)}</td></tr>`).join("")}</table>` : `<div class="vacio">La biblioteca está vacía.</div>`;
+}
+$("#btnIndexar").onclick = async () => { await post("/api/indexar"); vigilarTarea(cargarDocs); };
+
+/* ---------- Ajustes ---------- */
+let cfg;
+async function cargarAjustes(){
+  cfg = await fetch("/api/config").then(r=>r.json());
+  $("#kwEn").value = (cfg.palabras_clave.en||[]).join("\n");
+  $("#kwEs").value = (cfg.palabras_clave.es||[]).join("\n");
+  $("#temasTxt").value = Object.entries(cfg.temas||{}).map(([k,v])=>`${k}: ${v.join(", ")}`).join("\n");
+  $("#rssTxt").value = (cfg.rss||[]).map(f=>`${f.nombre} | ${f.url}`).join("\n");
+  $("#rssFiltro").checked = cfg.rss_filtrar_por_palabras;
+  $("#correo").value = cfg.correo_contacto||""; $("#dias").value = cfg.dias_hacia_atras;
+  $("#chipsFuentes").innerHTML = Object.entries(cfg.fuentes).map(([k,v])=>`<span class="chip ${v?"activo":""}" data-f="${k}">${k.replace("_"," ")}</span>`).join("");
+  $("#tema").innerHTML = `<option value="">— o elige una problemática —</option>` + Object.keys(cfg.temas||{}).map(t=>`<option>${esc(t)}</option>`).join("");
+}
+$("#chipsFuentes").onclick = e => { if(e.target.dataset.f) e.target.classList.toggle("activo"); };
+$("#btnGuardar").onclick = async () => {
+  const lineas = id => $(id).value.split("\n").map(s=>s.trim()).filter(Boolean);
+  const temas = {}; lineas("#temasTxt").forEach(l => { const i=l.indexOf(":"); if(i>0) temas[l.slice(0,i).trim()] = l.slice(i+1).split(",").map(s=>s.trim()).filter(Boolean); });
+  const fuentes = {}; document.querySelectorAll("#chipsFuentes .chip").forEach(c=>fuentes[c.dataset.f]=c.classList.contains("activo"));
+  await post("/api/config",{
+    palabras_clave:{en:lineas("#kwEn"), es:lineas("#kwEs")}, temas, fuentes,
+    rss: lineas("#rssTxt").map(l=>{const [n,...u]=l.split("|"); return {nombre:n.trim(), url:u.join("|").trim()};}).filter(f=>f.url),
+    rss_filtrar_por_palabras:$("#rssFiltro").checked, correo_contacto:$("#correo").value.trim(),
+    dias_hacia_atras: parseInt($("#dias").value)||7 });
+  toast("Ajustes guardados"); cargarAjustes();
+};
+
+cargarAjustes(); cargarHallazgos();
+</script>
+</body>
+</html>

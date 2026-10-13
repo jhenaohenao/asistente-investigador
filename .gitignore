@@ -1,0 +1,9 @@
+# Datos personales: nunca se suben
+datos.sqlite
+registro.txt
+biblioteca/*
+!biblioteca/.mantener
+# Entorno
+.venv/
+__pycache__/
+*.pyc
